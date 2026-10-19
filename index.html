@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EA FC - Calculadora de Pacotes EV & ROI</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: #151922;
+            --card-border: #232936;
+            --accent-green: #00ff87;
+            --accent-green-hover: #00cc6c;
+            --accent-gold: #ffb800;
+            --danger-red: #ff4757;
+            --text-main: #f0f2f5;
+            --text-muted: #8c9ba5;
+            --input-bg: #1c2230;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 12px;
+            padding-bottom: 40px;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 12px;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        header p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            background: var(--card-bg);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--input-bg);
+            color: var(--accent-green);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-green);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .col {
+            flex: 1;
+        }
+
+        /* Tier Items */
+        .tier-item {
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid #1f2633;
+        }
+
+        .tier-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn-danger {
+            background: var(--danger-red);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-add {
+            background: transparent;
+            color: var(--accent-green);
+            border: 1px dashed var(--accent-green);
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 6px;
+            font-size: 0.85rem;
+        }
+
+        /* Results Display */
+        .result-box {
+            background: linear-gradient(135deg, #18221c 0%, #151922 100%);
+            border: 1px solid var(--accent-green);
+            text-align: center;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 14px;
+        }
+
+        .result-main {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent-green);
+            margin: 4px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-danger { background: rgba(255, 71, 87, 0.2); color: var(--danger-red); }
+        .badge-success { background: rgba(0, 255, 135, 0.2); color: var(--accent-green); }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-card {
+            background: var(--input-bg);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-card .val {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        /* Target Breakdown Box */
+        .target-box {
+            background: #231d10;
+            border: 1px solid var(--accent-gold);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .target-box h4 {
+            color: var(--accent-gold);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .target-box p {
+            font-size: 0.8rem;
+            color: #d8c29d;
+        }
+
+        .target-box .target-val {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #fff;
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: #000;
+            font-weight: bold;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* History List */
+        .history-item {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-info h4 { font-size: 0.9rem; color: #fff; }
+        .history-info p { font-size: 0.75rem; color: var(--text-muted); }
+        
+        .history-val { text-align: right; }
+        .history-val .profit { color: var(--accent-green); font-weight: bold; }
+        .history-val .loss { color: var(--danger-red); font-weight: bold; }
+
+        .empty-msg {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⚡ EA FC 27 - PACK CALCULATOR</h1>
+        <p>Análise de Retorno, EV & Controle de Histórico</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('simulador')">📊 Simulador EV</button>
+        <button class="tab-btn" onclick="switchTab('registrar')">📝 Registrar Pack</button>
+        <button class="tab-btn" onclick="switchTab('historico')">📜 Histórico & Saldo</button>
+    </div>
+
+    <!-- TAB 1: SIMULADOR DE EV E BREAK-EVEN -->
+    <div id="simulador" class="tab-content active">
+        <div class="card">
+            <div class="card-title">
+                <span>Configuração do Pacote</span>
+                <button onclick="salvarPreset()" style="background:none; border:none; color:var(--accent-green); cursor:pointer; font-size:0.8rem;">💾 Salvar Preset</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Nome do Pacote</label>
+                <input type="text" id="packName" value="Pacote Ouro Grande de Atletas">
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label>Custo em Moedas (Coins)</label>
+                    <input type="number" id="packCost" value="60000" oninput="calcularEV()">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Faixas de Probabilidade da Loja</div>
+            <div id="tiersContainer"></div>
+            <button class="btn-add" onclick="addTier()">+ Adicionar Faixa de Rating</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Consumíveis e Outros Itens (Quick Sell)</div>
+            <div class="row">
+                <div class="col form-group">
+                    <label>Qtd. Consumíveis</label>
+                    <input type="number" id="consumableQty" value="12" oninput="calcularEV()">
+                </div>
+                <div class="col form-group">
+                    <label>Valor Médio Descarte (ea)</label>
+                    <input type="number" id="consumableVal" value="200" oninput="calcularEV()">
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTADOS DA SIMULAÇÃO -->
+        <div class="result-box">
+            <span id="badgeResultado" class="badge badge-danger">RISCO ALTO / PREJUÍZO ESPERADO</span>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">VALOR ESPERADO MÉDIO (EV)</div>
+            <div class="result-main" id="evTotal">0 Coins</div>
+            <div style="font-size:0.85rem;" id="roiTotal">Retorno Médio: 0%</div>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div style="font-size:0.7rem; color:var(--text-muted)">PERDA MÉDIA ESPERADA</div>
+                    <div class="val" id="lossEsperada" style="color:var(--danger-red)">0 Coins</div>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size:0.7rem; color:var(--text-muted)">LUCRO DOS CONSUMÍVEIS</div>
+                    <div class="val" id="consumablesTotal" style="color:var(--accent-gold)">0 Coins</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- META DE BREAK-EVEN -->
+        <div class="target-box">
+            <h4>🎯 META DE BREAK-EVEN (JOGADOR ALVO)</h4>
+            <p>Para este pacote se pagar (0 de prejuízo), seu **melhor jogador** tirado precisa valer no mínimo:</p>
+            <div class="target-val" id="targetPlayerVal">0 Coins</div>
+        </div>
+    </div>
+
+    <!-- TAB 2: REGISTRAR RESULTADO DE ABERTURA REAL -->
+    <div id="registrar" class="tab-content">
+        <div class="card">
+            <div class="card-title">Registrar Abertura Real</div>
+            
+            <div class="form-group">
+                <label>Nome do Pacote</label>
+                <input type="text" id="regPackName" placeholder="Ex: Pacote Ouro Jumbo">
+            </div>
+
+            <div class="form-group">
+                <label>Custo Pago (Moedas)</label>
+                <input type="number" id="regPackCost" placeholder="Ex: 60000">
+            </div>
+
+            <div class="form-group">
+                <label>Valor do Melhor Jogador Tirado (Market Value)</label>
+                <input type="number" id="regBestPlayer" placeholder="Ex: 45000">
+            </div>
+
+            <div class="form-group">
+                <label>Valor das Demais Cartas + Consumíveis (Quick Sell / Vendas)</label>
+                <input type="number" id="regOthersVal" placeholder="Ex: 5400">
+            </div>
+
+            <button class="btn-primary" onclick="salvarAbertura()">💾 Salvar Abertura no Histórico</button>
+        </div>
+    </div>
+
+    <!-- TAB 3: HISTÓRICO E BALANÇO GERAL -->
+    <div id="historico" class="tab-content">
+        <div class="card" style="background: linear-gradient(135deg, #1c2333 0%, #151922 100%); border-color: var(--accent-gold);">
+            <div class="card-title">💰 Saldo Geral dos Pacotes</div>
+            
+            <div class="stat-grid" style="grid-template-columns: 1fr 1fr;">
+                <div class="stat-card">
+                    <div style="font-size:0.7rem; color:var(--text-muted)">TOTAL INVESTIDO</div>
+                    <div class="val" id="totalSpent" style="color:#fff">0 Coins</div>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size:0.7rem; color:var(--text-muted)">TOTAL RETORNADO</div>
+                    <div class="val" id="totalReturned" style="color:#fff">0 Coins</div>
+                </div>
+            </div>
+
+            <div class="result-box" style="margin-top:10px; padding:12px;">
+                <div style="font-size:0.75rem; color:var(--text-muted)">LUCRO / PREJUÍZO LÍQUIDO</div>
+                <div class="result-main" id="netProfit" style="font-size:1.6rem;">0 Coins</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>Histórico de Pacotes Abertos</span>
+                <button onclick="limparHistorico()" style="background:none; border:none; color:var(--danger-red); cursor:pointer; font-size:0.75rem;">Limpar Tudo</button>
+            </div>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Dados Padrão de Faixas (Tiers)
+        let defaultTiers = [
+            { name: "Ouro 75+", prob: 100, price: 400 },
+            { name: "Ouro 82+", prob: 25, price: 800 },
+            { name: "Ouro 84+", prob: 8.5, price: 2800 },
+            { name: "Ouro 86+", prob: 2.1, price: 12000 }
+        ];
+
+        let historyData = JSON.parse(localStorage.getItem('eafc_pack_history')) || [];
+
+        function init() {
+            renderTiers();
+            calcularEV();
+            renderHistory();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function renderTiers() {
+            const container = document.getElementById('tiersContainer');
+            container.innerHTML = '';
+            
+            defaultTiers.forEach((tier, index) => {
+                container.innerHTML += `
+                    <div class="tier-item">
+                        <div class="tier-row">
+                            <input type="text" value="${tier.name}" style="flex:1.2" onchange="updateTier(${index}, 'name', this.value)">
+                            <input type="number" value="${tier.prob}" placeholder="%" style="flex:0.8" onchange="updateTier(${index}, 'prob', this.value)"> %
+                            <input type="number" value="${tier.price}" placeholder="Coins" style="flex:1" onchange="updateTier(${index}, 'price', this.value)">
+                            <button class="btn-danger" onclick="removeTier(${index})">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addTier() {
+            defaultTiers.push({ name: "Novo Rating", prob: 5, price: 5000 });
+            renderTiers();
+            calcularEV();
+        }
+
+        function removeTier(index) {
+            defaultTiers.splice(index, 1);
+            renderTiers();
+            calcularEV();
+        }
+
+        function updateTier(index, field, value) {
+            defaultTiers[index][field] = field === 'name' ? value : parseFloat(value) || 0;
+            calcularEV();
+        }
+
+        function calcularEV() {
+            const packCost = parseFloat(document.getElementById('packCost').value) || 0;
+            const consumableQty = parseFloat(document.getElementById('consumableQty').value) || 0;
+            const consumableVal = parseFloat(document.getElementById('consumableVal').value) || 0;
+
+            const totalConsumablesEV = consumableQty * consumableVal;
+            
+            // Cálculo do EV dos Jogadores
+            let totalPlayersEV = 0;
+            defaultTiers.forEach(tier => {
+                totalPlayersEV += (tier.prob / 100) * tier.price;
+            });
+
+            const evTotal = totalPlayersEV + totalConsumablesEV;
+            const roi = packCost > 0 ? ((evTotal / packCost) * 100).toFixed(1) : 0;
+            const loss = packCost - evTotal;
+
+            // Atualiza Interface
+            document.getElementById('evTotal').innerText = `${Math.round(evTotal).toLocaleString('pt-BR')} Coins`;
+            document.getElementById('roiTotal').innerText = `Retorno Médio Esperado: ${roi}%`;
+            document.getElementById('lossEsperada').innerText = `-${Math.round(loss > 0 ? loss : 0).toLocaleString('pt-BR')} Coins`;
+            document.getElementById('consumablesTotal').innerText = `+${Math.round(totalConsumablesEV).toLocaleString('pt-BR')} Coins`;
+
+            // Badge Status
+            const badge = document.getElementById('badgeResultado');
+            if (roi >= 100) {
+                badge.innerText = "LUCRATIVO / BOM INVESTIMENTO";
+                badge.className = "badge badge-success";
+            } else {
+                badge.innerText = "RISCO ALTO / PREJUÍZO ESPERADO";
+                badge.className = "badge badge-danger";
+            }
+
+            // Cálculo do Break-Even Target Player
+            const neededForBreakEven = packCost - totalConsumablesEV;
+            const targetVal = neededForBreakEven > 0 ? neededForBreakEven : 0;
+            document.getElementById('targetPlayerVal').innerText = `${Math.round(targetVal).toLocaleString('pt-BR')} Coins`;
+        }
+
+        function salvarPreset() {
+            localStorage.setItem('eafc_preset_tiers', JSON.stringify(defaultTiers));
+            alert('Preset de probabilidades e cotações salvo com sucesso!');
+        }
+
+        function salvarAbertura() {
+            const name = document.getElementById('regPackName').value || 'Pacote Sem Nome';
+            const cost = parseFloat(document.getElementById('regPackCost').value) || 0;
+            const bestPlayer = parseFloat(document.getElementById('regBestPlayer').value) || 0;
+            const others = parseFloat(document.getElementById('regOthersVal').value) || 0;
+
+            const totalReturned = bestPlayer + others;
+            const netProfit = totalReturned - cost;
+
+            const packEntry = {
+                id: Date.now(),
+                name,
+                cost,
+                bestPlayer,
+                others,
+                totalReturned,
+                netProfit,
+                date: new Date().toLocaleDateString('pt-BR')
+            };
+
+            historyData.unshift(packEntry);
+            localStorage.setItem('eafc_pack_history', JSON.stringify(historyData));
+
+            // Limpa formulário
+            document.getElementById('regPackName').value = '';
+            document.getElementById('regPackCost').value = '';
+            document.getElementById('regBestPlayer').value = '';
+            document.getElementById('regOthersVal').value = '';
+
+            renderHistory();
+            switchTab('historico');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            container.innerHTML = '';
+
+            if (historyData.length === 0) {
+                container.innerHTML = `<div class="empty-msg">Nenhum pacote registrado ainda.</div>`;
+                updateSummary(0, 0, 0);
+                return;
+            }
+
+            let spent = 0;
+            let returned = 0;
+
+            historyData.forEach(item => {
+                spent += item.cost;
+                returned += item.totalReturned;
+
+                const isProfit = item.netProfit >= 0;
+                container.innerHTML += `
+                    <div class="history-item">
+                        <div class="history-info">
+                            <h4>${item.name}</h4>
+                            <p>${item.date} • Custo: ${item.cost.toLocaleString('pt-BR')} Coins</p>
+                        </div>
+                        <div class="history-val">
+                            <div class="${isProfit ? 'profit' : 'loss'}">
+                                ${isProfit ? '+' : ''}${item.netProfit.toLocaleString('pt-BR')} Coins
+                            </div>
+                            <small style="font-size:0.7rem; color:var(--text-muted);">Retorno: ${item.totalReturned.toLocaleString('pt-BR')}</small>
+                        </div>
+                    </div>
+                `;
+            });
+
+            updateSummary(spent, returned, returned - spent);
+        }
+
+        function updateSummary(spent, returned, net) {
+            document.getElementById('totalSpent').innerText = `${spent.toLocaleString('pt-BR')} Coins`;
+            document.getElementById('totalReturned').innerText = `${returned.toLocaleString('pt-BR')} Coins`;
+            
+            const netEl = document.getElementById('netProfit');
+            netEl.innerText = `${net >= 0 ? '+' : ''}${net.toLocaleString('pt-BR')} Coins`;
+            netEl.style.color = net >= 0 ? 'var(--accent-green)' : 'var(--danger-red)';
+        }
+
+        function limparHistorico() {
+            if (confirm("Tem certeza que deseja apagar todo o histórico de pacotes?")) {
+                historyData = [];
+                localStorage.removeItem('eafc_pack_history');
+                renderHistory();
+            }
+        }
+
+        // Inicializar App
+        init();
+    </script>
+</body>
+</html>

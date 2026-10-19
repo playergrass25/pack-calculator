@@ -195,7 +195,6 @@
             cursor: pointer;
         }
 
-        /* GRID DE BOTÕES RÁPIDOS */
         .quick-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -231,7 +230,6 @@
             color: var(--accent-blue);
         }
 
-        /* LISTA DE CARTAS OBTIDAS */
         .card-list-item {
             display: flex;
             justify-content: space-between;
@@ -250,7 +248,6 @@
             font-size: 0.75rem;
         }
 
-        /* PAINEL DE RESULTADOS */
         .results-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -359,17 +356,13 @@
         <p>Calculadora de EV & Aberturas em Tempo Real</p>
     </header>
 
-    <!-- NAVEGAÇÃO DE ABAS -->
     <div class="tabs-header">
         <div class="tab-btn active" onclick="switchTab('tab-simulador')">1. Calculadora EV</div>
         <div class="tab-btn" onclick="switchTab('tab-abertura')">2. Registro de Abertura</div>
     </div>
 
-    <!-- ============================================================== -->
-    <!-- ABA 1: CALCULADORA DE EV E PRÉ-SETS                             -->
-    <!-- ============================================================== -->
+    <!-- ABA 1: CALCULADORA DE EV -->
     <div id="tab-simulador" class="tab-content active">
-        <!-- GERENCIADOR DE PRÉ-SETS -->
         <div class="card" style="border-color: var(--accent-gold);">
             <div class="card-title">
                 <span>💾 Pré-sets Salvos</span>
@@ -377,13 +370,11 @@
             </div>
             <div class="form-group">
                 <select id="presetSelect" onchange="carregarPresetSelecionado()">
-                    <!-- Preenchido via JS -->
                 </select>
             </div>
             <button class="btn-action" style="width:100%; text-align:center;" onclick="salvarNovoPreset()">💾 Salvar Configurações Atuais como Novo Pré-set</button>
         </div>
 
-        <!-- CONFIGURAÇÃO DO PACOTE -->
         <div class="card">
             <div class="card-title">Configuração do Pacote</div>
             
@@ -407,14 +398,12 @@
             </div>
         </div>
 
-        <!-- FAIXAS DE PROBABILIDADE -->
         <div class="card">
             <div class="card-title">Faixas de Probabilidade da Loja</div>
             <div id="tiersContainer"></div>
             <button class="btn-add" onclick="addTier()">+ Adicionar Faixa de Rating / Especial</button>
         </div>
 
-        <!-- CONSUMÍVEIS -->
         <div class="card">
             <div class="card-title">Consumíveis & Outros Itens</div>
             <div class="row">
@@ -429,7 +418,6 @@
             </div>
         </div>
 
-        <!-- PAINEL DE RESULTADOS EV -->
         <div class="card" style="border-color: var(--accent-green);">
             <div class="card-title">📊 Retorno Esperado (EV) & Análise de Risco</div>
 
@@ -457,12 +445,8 @@
         </div>
     </div>
 
-
-    <!-- ============================================================== -->
-    <!-- ABA 2: REGISTRO DE ABERTURA EM TEMPO REAL                       -->
-    <!-- ============================================================== -->
+    <!-- ABA 2: REGISTRO DE ABERTURA -->
     <div id="tab-abertura" class="tab-content">
-        <!-- PAINEL DE REGISTRO DO PACOTE ATUAL -->
         <div class="card" style="border-color: var(--accent-blue);">
             <div class="card-title">
                 <span>📦 Abrir Pacote: <span id="openPackTitle" style="color:#fff;">---</span></span>
@@ -488,12 +472,10 @@
                 <button class="grid-btn" style="border-color: var(--accent-blue); grid-column: span 2;" onclick="addCardPersonalizada()">➕ Outro Rating...</button>
             </div>
 
-            <!-- ITENS TIRADOS -->
             <label>Itens Registrados (<span id="openedCardsCount">0</span>):</label>
             <div id="openedCardsList" style="margin-top: 6px; min-height: 40px;"></div>
         </div>
 
-        <!-- BALANÇO DA ABERTURA ATUAL -->
         <div class="card" style="border-color: var(--accent-blue);">
             <div class="card-title">📊 Balanço da Abertura</div>
 
@@ -521,14 +503,12 @@
             </button>
         </div>
 
-        <!-- HISTÓRICO GLOBAL DE PACKS ABERTOS -->
         <div class="card" style="border-color: var(--accent-gold);">
             <div class="card-title">
                 <span>📜 Histórico Geral de Packs Abertos</span>
                 <button class="btn-danger" style="font-size:0.75rem; padding:4px 8px;" onclick="limparTodoHistorico()">🗑️ Limpar</button>
             </div>
 
-            <!-- RESUMO ACUMULADO -->
             <div style="background:var(--input-bg); padding:10px; border-radius:6px; margin-bottom:12px; border:1px solid var(--card-border);">
                 <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:4px;">
                     <span style="color:var(--text-muted);">Total de Packs Abertos:</span>
@@ -548,14 +528,32 @@
                 </div>
             </div>
 
-            <!-- LISTA DE PACKS GRAVADOS -->
             <div id="historyListContainer"></div>
         </div>
     </div>
 
-
     <script>
-        // TABELA OFICIAL DE DESCARTE BASE FC 27 (FIFA U TEAM)
         const DISCARD_PRICES_FC27 = {
             75: 533, 76: 540, 77: 547, 78: 554, 79: 561,
-            80: 568, 81: 575, 82: 582, 83: 589, 84
+            80: 568, 81: 575, 82: 582, 83: 589, 84: 596,
+            85: 604, 86: 611, 87: 618, 88: 622, 89: 630,
+            90: 638, 91: 646, 92: 11224, 93: 11346, 94: 11468,
+            95: 11590, 96: 11712, 97: 11834, 98: 11956, 99: 12078,
+            'totw_75': 9150, 'totw_76': 9272, 'totw_77': 9394, 'totw_78': 9516, 'totw_79': 9638,
+            'totw_80': 9760, 'totw_81': 9882, 'totw_82': 10004, 'totw_83': 10126, 'totw_84': 10248,
+            'totw_85': 10370, 'totw_86': 10492, 'totw_87': 10614, 'totw_88': 10736, 'totw_89': 10858,
+            'totw_90': 10980, 'totw_91': 11102, 'totw_92': 11224, 'totw_93': 11346, 'totw_94': 11468,
+            'totw_95': 11590, 'totw_96': 11712, 'totw_97': 11834, 'totw_98': 11956, 'totw_99': 12078,
+            'consumable': 150
+        };
+
+        let defaultPresets = [
+            {
+                id: "p1",
+                name: "Pacote Ouro Grande de Atletas (60k)",
+                cost: 60000,
+                consQty: 12,
+                consVal: 150,
+                tiers: [
+                    { key: "75", prob: 100, marketPrice: 400 },
+                    { key: "82", prob: 3

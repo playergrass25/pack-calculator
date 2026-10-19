@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EA FC - Calculadora de Pacotes EV & ROI</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%231a2332'/><rect x='136' y='82' width='240' height='348' rx='16' fill='%23f7c844'/><circle cx='256' cy='256' r='78' fill='%23101622' stroke='%23ffe875' stroke-width='3'/><path d='M202 292 L238 256 L258 276 L302 226' fill='none' stroke='%2300ff87' stroke-width='11' stroke-linecap='round' stroke-linejoin='round'/><path d='M280 224 L310 220 L306 250 Z' fill='%2300ff87'/></svg>">
-
+    <title>EA FC 27 - Calculadora de EV de Pacotes</title>
     <style>
         :root {
             --bg-color: #0b0e14;
             --card-bg: #151922;
             --card-border: #232936;
             --accent-green: #00ff87;
-            --accent-green-hover: #00cc6c;
             --accent-gold: #ffb800;
             --danger-red: #ff4757;
             --text-main: #f0f2f5;
@@ -26,21 +21,21 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            padding: 12px;
-            padding-bottom: 40px;
+            padding: 16px;
             max-width: 650px;
             margin: 0 auto;
+            padding-bottom: 40px;
         }
 
         header {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             border-bottom: 1px solid var(--card-border);
             padding-bottom: 12px;
         }
@@ -58,44 +53,12 @@
             margin-top: 4px;
         }
 
-        .tabs {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 16px;
-            background: var(--card-bg);
-            padding: 4px;
-            border-radius: 8px;
-            border: 1px solid var(--card-border);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px 4px;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 600;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tab-btn.active {
-            background: var(--input-bg);
-            color: var(--accent-green);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
         .card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 14px;
+            padding: 16px;
+            margin-bottom: 16px;
         }
 
         .card-title {
@@ -108,7 +71,9 @@
             align-items: center;
         }
 
-        .form-group { margin-bottom: 10px; }
+        .form-group {
+            margin-bottom: 12px;
+        }
 
         label {
             display: block;
@@ -133,7 +98,11 @@
             border-color: var(--accent-green);
         }
 
-        .row { display: flex; gap: 10px; }
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
         .col { flex: 1; }
 
         .checkbox-group {
@@ -147,46 +116,23 @@
             cursor: pointer;
         }
 
-        .checkbox-group input { width: auto; cursor: pointer; }
+        .checkbox-group input {
+            width: auto;
+            cursor: pointer;
+        }
 
-        .tier-item, .card-item {
+        .tier-item {
             background: rgba(0,0,0,0.2);
-            padding: 8px 10px;
+            padding: 10px;
             border-radius: 6px;
             margin-bottom: 8px;
             border: 1px solid #1f2633;
         }
 
-        .tier-row, .card-row {
+        .tier-row {
             display: flex;
             gap: 8px;
             align-items: center;
-        }
-
-        .card-label {
-            font-weight: bold;
-            color: var(--accent-gold);
-            font-size: 0.85rem;
-            min-width: 28px;
-        }
-
-        .btn-toggle-market {
-            background: var(--input-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-muted);
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-
-        .btn-toggle-market.active {
-            background: rgba(0, 255, 135, 0.15);
-            border-color: var(--accent-green);
-            color: var(--accent-green);
         }
 
         .btn-danger {
@@ -212,60 +158,59 @@
             font-weight: bold;
         }
 
-        .result-box {
-            background: linear-gradient(135deg, #18221c 0%, #151922 100%);
-            border: 1px solid var(--accent-green);
-            text-align: center;
-            padding: 16px;
-            border-radius: 10px;
+        /* PAINEL DE RESULTADOS */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin-top: 14px;
         }
 
-        .result-main {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--accent-green);
-            margin: 4px 0;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .badge-danger { background: rgba(255, 71, 87, 0.2); color: var(--danger-red); }
-        .badge-success { background: rgba(0, 255, 135, 0.2); color: var(--accent-green); }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .stat-card {
+        .result-card {
             background: var(--input-bg);
-            padding: 10px;
-            border-radius: 6px;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid var(--card-border);
             text-align: center;
         }
 
-        .stat-card .val {
-            font-size: 1.1rem;
+        .result-card.market {
+            border-color: var(--accent-green);
+            background: linear-gradient(135deg, rgba(0, 255, 135, 0.05) 0%, var(--input-bg) 100%);
+        }
+
+        .result-card.discard {
+            border-color: var(--accent-gold);
+            background: linear-gradient(135deg, rgba(255, 184, 0, 0.05) 0%, var(--input-bg) 100%);
+        }
+
+        .result-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .result-val {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .result-val.market-color { color: var(--accent-green); }
+        .result-val.discard-color { color: var(--accent-gold); }
+
+        .result-sub {
+            font-size: 0.75rem;
             font-weight: bold;
-            margin-top: 2px;
         }
 
         .target-box {
             background: #231d10;
             border: 1px solid var(--accent-gold);
-            padding: 12px;
+            padding: 14px;
             border-radius: 8px;
-            margin-top: 12px;
+            margin-top: 14px;
         }
 
         .target-box h4 {
@@ -280,288 +225,210 @@
         }
 
         .target-box .target-val {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #fff;
             margin-top: 4px;
-        }
-
-        .btn-primary {
-            background: var(--accent-green);
-            color: #000;
-            font-weight: bold;
-            border: none;
-            width: 100%;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .history-item {
-            background: var(--input-bg);
-            border: 1px solid var(--card-border);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-
-        .history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--card-border);
-            padding-bottom: 6px;
-            margin-bottom: 6px;
-        }
-
-        .history-cards-list {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 6px;
-            line-height: 1.4;
-        }
-
-        .history-val { text-align: right; }
-        .history-val .profit { color: var(--accent-green); font-weight: bold; }
-        .history-val .loss { color: var(--danger-red); font-weight: bold; }
-
-        .empty-msg {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 20px;
-            font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>⚡ EA FC - PACK CALCULATOR</h1>
-        <p>Análise de Retorno, Imposto EA & Histórico</p>
+        <h1>⚡ EA FC 27 - CALCULADORA DE EV</h1>
+        <p>Visão de Mercado vs. Piso de Descarte (FC 27 Data)</p>
     </header>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('simulador')">📊 Simulador EV</button>
-        <button class="tab-btn" onclick="switchTab('registrar')">📝 Registrar Pack</button>
-        <button class="tab-btn" onclick="switchTab('historico')">📜 Histórico</button>
+    <!-- 1. DADOS DO PACOTE -->
+    <div class="card">
+        <div class="card-title">1. Configuração do Pacote</div>
+        
+        <div class="form-group">
+            <label>Nome do Pacote</label>
+            <input type="text" id="packName" value="Pacote Ouro Grande de Atletas">
+        </div>
+
+        <div class="row">
+            <div class="col form-group">
+                <label>Custo do Pacote (Coins)</label>
+                <input type="number" id="packCost" value="60000" oninput="calcularTudo()">
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 4px;">
+            <label class="checkbox-group">
+                <input type="checkbox" id="taxCheckbox" checked onchange="calcularTudo()">
+                <span>Aplicar Imposto de 5% da EA sobre Vendas de Mercado</span>
+            </label>
+        </div>
     </div>
 
-    <!-- TAB 1: SIMULADOR DE EV E BREAK-EVEN -->
-    <div id="simulador" class="tab-content active">
-        <div class="card">
-            <div class="card-title">
-                <span>Carregar Presets</span>
-                <button onclick="deletarPresetAtual()" style="background:none; border:none; color:var(--danger-red); cursor:pointer; font-size:0.75rem;">🗑️ Excluir Preset</button>
-            </div>
-            <div class="form-group">
-                <select id="presetSelect" onchange="carregarPresetSelecionado()">
-                    <!-- Preenchido via JS -->
-                </select>
-            </div>
-        </div>
+    <!-- 2. PROBABILIDADES DA LOJA -->
+    <div class="card">
+        <div class="card-title">2. Faixas de Probabilidade da Loja</div>
+        <div id="tiersContainer"></div>
+        <button class="btn-add" onclick="addTier()">+ Adicionar Faixa de Rating</button>
+    </div>
 
-        <div class="card">
-            <div class="card-title">
-                <span>Configuração do Pacote</span>
-                <button onclick="salvarPreset()" style="background:none; border:none; color:var(--accent-green); cursor:pointer; font-size:0.8rem;">💾 Salvar Novo Preset</button>
+    <!-- 3. CONSUMÍVEIS / OUTROS ITENS -->
+    <div class="card">
+        <div class="card-title">3. Consumíveis & Outros Itens</div>
+        <div class="row">
+            <div class="col form-group">
+                <label>Qtd. Consumíveis/Estádio</label>
+                <input type="number" id="consumableQty" value="12" oninput="calcularTudo()">
             </div>
-            
-            <div class="form-group">
-                <label>Nome do Pacote</label>
-                <input type="text" id="packName" value="Pacote Ouro Grande de Atletas">
-            </div>
-
-            <div class="row">
-                <div class="col form-group">
-                    <label>Custo em Moedas (Coins)</label>
-                    <input type="number" id="packCost" value="60000" oninput="calcularEV()">
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-top: 5px;">
-                <label class="checkbox-group">
-                    <input type="checkbox" id="taxCheckbox" checked onchange="calcularEV()">
-                    <span>Descontar Imposto da EA (5% na venda)</span>
-                </label>
+            <div class="col form-group">
+                <label>Valor Descarte p/ Item</label>
+                <input type="number" id="consumableVal" value="150" oninput="calcularTudo()">
             </div>
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-title">Faixas de Probabilidade da Loja</div>
-            <div id="tiersContainer"></div>
-            <button class="btn-add" onclick="addTier()">+ Adicionar Faixa de Rating</button>
-        </div>
+    <!-- 4. RESULTADOS EM TEMPO REAL -->
+    <div class="card" style="border-color: var(--accent-green);">
+        <div class="card-title">📊 Retorno Esperado (EV) & Análise de Risco</div>
 
-        <div class="card">
-            <div class="card-title">Consumíveis e Outros (Descarte / Quick Sell)</div>
-            <div class="row">
-                <div class="col form-group">
-                    <label>Qtd. Consumíveis</label>
-                    <input type="number" id="consumableQty" value="12" oninput="calcularEV()">
-                </div>
-                <div class="col form-group">
-                    <label>Valor Médio Descarte (ea)</label>
-                    <input type="number" id="consumableVal" value="200" oninput="calcularEV()">
-                </div>
+        <div class="results-grid">
+            <!-- VISÃO MERCADO -->
+            <div class="result-card market">
+                <div class="result-title">🟢 Visão Mercado</div>
+                <div class="result-val market-color" id="evMarket">0 Coins</div>
+                <div class="result-sub" id="roiMarket">ROI: 0%</div>
             </div>
-        </div>
 
-        <!-- RESULTADOS DA SIMULAÇÃO -->
-        <div class="result-box">
-            <span id="badgeResultado" class="badge badge-danger">RISCO ALTO / PREJUÍZO ESPERADO</span>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">VALOR ESPERADO LÍQUIDO (EV)</div>
-            <div class="result-main" id="evTotal">0 Coins</div>
-            <div style="font-size:0.85rem;" id="roiTotal">Retorno Médio: 0%</div>
-
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <div style="font-size:0.7rem; color:var(--text-muted)">PERDA MÉDIA ESPERADA</div>
-                    <div class="val" id="lossEsperada" style="color:var(--danger-red)">0 Coins</div>
-                </div>
-                <div class="stat-card">
-                    <div style="font-size:0.7rem; color:var(--text-muted)">LUCRO CONSUMÍVEIS</div>
-                    <div class="val" id="consumablesTotal" style="color:var(--accent-gold)">0 Coins</div>
-                </div>
+            <!-- VISÃO DESCARTE -->
+            <div class="result-card discard">
+                <div class="result-title">🛡️ Piso de Descarte</div>
+                <div class="result-val discard-color" id="evDiscard">0 Coins</div>
+                <div class="result-sub" id="roiDiscard">Piso: 0%</div>
             </div>
         </div>
 
         <!-- META DE BREAK-EVEN -->
         <div class="target-box">
             <h4>🎯 META DE BREAK-EVEN (JOGADOR ALVO)</h4>
-            <p>Para o pacote se pagar (considerando o imposto), seu **melhor jogador** precisa ser vendido por no mínimo:</p>
+            <p>Para cobrir o custo do pacote na Venda de Mercado, seu principal jogador precisa valer no mínimo:</p>
             <div class="target-val" id="targetPlayerVal">0 Coins</div>
         </div>
     </div>
 
-    <!-- TAB 2: REGISTRAR RESULTADO DE ABERTURA REAL -->
-    <div id="registrar" class="tab-content">
-        <div class="card">
-            <div class="card-title">Registrar Abertura Real</div>
-            
-            <div class="form-group">
-                <label>Nome do Pacote</label>
-                <input type="text" id="regPackName" placeholder="Ex: Pacote Ouro Jumbo">
-            </div>
-
-            <div class="form-group">
-                <label>Custo Pago (Moedas)</label>
-                <input type="number" id="regPackCost" placeholder="Ex: 60000" oninput="atualizarResumoAbertura()">
-            </div>
-        </div>
-
-        <!-- CARTA POR CARTA (C1, C2, C3...) -->
-        <div class="card">
-            <div class="card-title">
-                <span>Cartas Tiradas</span>
-                <span id="regTotalBruto" style="font-size:0.8rem; color:var(--text-muted)">Bruto: 0 Coins</span>
-            </div>
-            
-            <div id="cardsContainer"></div>
-            <button class="btn-add" onclick="addCardInput()">+ Adicionar Carta (C${currentRegCards.length + 1})</button>
-        </div>
-
-        <div class="card" style="background: #18221c; border-color: var(--accent-green);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-size:0.75rem; color:var(--text-muted)">RETORNO LÍQUIDO CALCULADO</div>
-                    <div id="regNetReturn" style="font-size:1.4rem; font-weight:bold; color:var(--accent-green)">0 Coins</div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:0.75rem; color:var(--text-muted)">LUCRO / PREJUÍZO</div>
-                    <div id="regProfitLoss" style="font-size:1.2rem; font-weight:bold;">0 Coins</div>
-                </div>
-            </div>
-        </div>
-
-        <button class="btn-primary" onclick="salvarAbertura()">💾 Salvar Abertura no Histórico</button>
-    </div>
-
-    <!-- TAB 3: HISTÓRICO E BALANÇO GERAL -->
-    <div id="historico" class="tab-content">
-        <div class="card" style="background: linear-gradient(135deg, #1c2333 0%, #151922 100%); border-color: var(--accent-gold);">
-            <div class="card-title">💰 Saldo Geral dos Pacotes</div>
-            
-            <div class="stat-grid" style="grid-template-columns: 1fr 1fr;">
-                <div class="stat-card">
-                    <div style="font-size:0.7rem; color:var(--text-muted)">TOTAL INVESTIDO</div>
-                    <div class="val" id="totalSpent" style="color:#fff">0 Coins</div>
-                </div>
-                <div class="stat-card">
-                    <div style="font-size:0.7rem; color:var(--text-muted)">TOTAL RETORNADO (LÍQ.)</div>
-                    <div class="val" id="totalReturned" style="color:#fff">0 Coins</div>
-                </div>
-            </div>
-
-            <div class="result-box" style="margin-top:10px; padding:12px;">
-                <div style="font-size:0.75rem; color:var(--text-muted)">LUCRO / PREJUÍZO LÍQUIDO TOTAL</div>
-                <div class="result-main" id="netProfit" style="font-size:1.6rem;">0 Coins</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">
-                <span>Filtrar por Pacote</span>
-                <button onclick="limparHistorico()" style="background:none; border:none; color:var(--danger-red); cursor:pointer; font-size:0.75rem;">Limpar Tudo</button>
-            </div>
-            <div class="form-group">
-                <select id="historyFilterSelect" onchange="renderHistory()">
-                    <option value="ALL">Todos os Pacotes</option>
-                </select>
-            </div>
-            <div id="historyList"></div>
-        </div>
-    </div>
-
     <script>
-        // ESTADO DA APLICAÇÃO
-        let defaultTiers = [
-            { name: "Ouro 75+", prob: 100, price: 400 },
-            { name: "Ouro 82+", prob: 25, price: 800 },
-            { name: "Ouro 84+", prob: 8.5, price: 2800 },
-            { name: "Ouro 86+", prob: 2.1, price: 12000 }
-        ];
-
-        let presets = JSON.parse(localStorage.getItem('eafc_presets')) || [
-            { id: 'default1', name: "Pacote Ouro Grande de Atletas", cost: 60000, tiers: defaultTiers, consQty: 12, consVal: 200 }
-        ];
-
-        let historyData = JSON.parse(localStorage.getItem('eafc_pack_history')) || [];
-        let currentRegCards = [];
-
-        // INICIALIZAÇÃO
-        window.onload = function() {
-            renderPresetsSelect();
-            carregarPresetSelecionado();
-            addCardInput(); // Inicia com C1
-            renderHistory();
+        // TABELA OFICIAL DE DESCARTE BASE FC 27 (FIFA U TEAM)
+        const DISCARD_PRICES_FC27 = {
+            75: 533, 76: 540, 77: 547, 78: 554, 79: 561,
+            80: 568, 81: 575, 82: 582, 83: 589, 84: 596,
+            85: 604, 86: 611, 87: 618, 88: 622, 89: 630,
+            90: 638, 91: 646, 92: 11224, 93: 11346, 94: 11468,
+            95: 11590, 96: 11712, 97: 11834, 98: 11956, 99: 12078
         };
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
+        // FAIXAS PADRÃO INICIAIS DE EXEMPLO
+        let tiers = [
+            { rating: 75, prob: 100, marketPrice: 400 },
+            { rating: 82, prob: 30, marketPrice: 850 },
+            { rating: 84, prob: 12, marketPrice: 2800 },
+            { rating: 86, prob: 2.5, marketPrice: 11500 }
+        ];
 
-        // GERENCIAMENTO DE PRESETS
-        function renderPresetsSelect() {
-            const select = document.getElementById('presetSelect');
-            select.innerHTML = '';
-            presets.forEach((p, idx) => {
-                select.innerHTML += `<option value="${idx}">${p.name} (${p.cost.toLocaleString()} coins)</option>`;
+        window.onload = function() {
+            renderTiers();
+            calcularTudo();
+        };
+
+        function renderTiers() {
+            const container = document.getElementById('tiersContainer');
+            container.innerHTML = '';
+
+            tiers.forEach((tier, index) => {
+                const discardVal = DISCARD_PRICES_FC27[tier.rating] || 533;
+                container.innerHTML += `
+                    <div class="tier-item">
+                        <div class="tier-row">
+                            <div style="flex:1">
+                                <label>Rating Base</label>
+                                <input type="number" value="${tier.rating}" min="75" max="99" onchange="updateTier(${index}, 'rating', this.value)">
+                            </div>
+                            <div style="flex:1">
+                                <label>Prob. (%)</label>
+                                <input type="number" value="${tier.prob}" step="0.1" onchange="updateTier(${index}, 'prob', this.value)">
+                            </div>
+                            <div style="flex:1.2">
+                                <label>Preço Mercado</label>
+                                <input type="number" value="${tier.marketPrice}" step="50" onchange="updateTier(${index}, 'marketPrice', this.value)">
+                            </div>
+                            <div style="flex:0.8; text-align:center;">
+                                <label>Descarte</label>
+                                <span style="font-size:0.8rem; color:var(--accent-gold); font-weight:bold;">${discardVal}c</span>
+                            </div>
+                            <button class="btn-danger" style="margin-top:14px;" onclick="removeTier(${index})">✕</button>
+                        </div>
+                    </div>
+                `;
             });
         }
 
-        function carregarPresetSelecionado() {
-            const idx = document.getElementById('presetSelect').value;
-            if (presets[idx]) {
-                const p = presets[idx];
-                document.getElementById('packName').value = p.name;
-                document.getElementById('packCost').value = p.cost;
-                document.getElementById('consumableQty').value = p.consQty;
-                document.getElementById('consumableVal').value = p.consVal;
-                defaultTiers = JSON.parse(JSON.stringify(p.tiers));
-                renderTiers
+        function updateTier(index, field, value) {
+            tiers[index][field] = parseFloat(value) || 0;
+            renderTiers();
+            calcularTudo();
+        }
+
+        function addTier() {
+            tiers.push({ rating: 83, prob: 10, marketPrice: 1500 });
+            renderTiers();
+            calcularTudo();
+        }
+
+        function removeTier(index) {
+            tiers.splice(index, 1);
+            renderTiers();
+            calcularTudo();
+        }
+
+        function calcularTudo() {
+            const cost = parseFloat(document.getElementById('packCost').value) || 0;
+            const consQty = parseFloat(document.getElementById('consumableQty').value) || 0;
+            const consVal = parseFloat(document.getElementById('consumableVal').value) || 0;
+            const applyTax = document.getElementById('taxCheckbox').checked;
+
+            const consTotalDiscard = consQty * consVal;
+            const taxMultiplier = applyTax ? 0.95 : 1.0;
+
+            let evMarketBruto = 0;
+            let evDiscardTotal = consTotalDiscard;
+
+            tiers.forEach(tier => {
+                const prob = tier.prob / 100;
+                const discardPrice = DISCARD_PRICES_FC27[tier.rating] || 533;
+
+                evMarketBruto += prob * tier.marketPrice;
+                evDiscardTotal += prob * discardPrice;
+            });
+
+            // Adiciona consumíveis ao valor bruto do mercado também
+            evMarketBruto += consTotalDiscard;
+
+            const evMarketLiquido = evMarketBruto * taxMultiplier;
+
+            // ROIs
+            const roiMarket = cost > 0 ? (evMarketLiquido / cost) * 100 : 0;
+            const roiDiscard = cost > 0 ? (evDiscardTotal / cost) * 100 : 0;
+
+            // Meta Break-Even
+            // (TargetValue * taxMultiplier) + consTotalLiquido = cost
+            const neededFromPlayer = Math.max(0, cost - (consTotalDiscard * taxMultiplier));
+            const targetPlayerMarketVal = neededFromPlayer / taxMultiplier;
+
+            // Atualiza Interface
+            document.getElementById('evMarket').innerText = `${Math.round(evMarketLiquido).toLocaleString()} Coins`;
+            document.getElementById('roiMarket').innerText = `ROI Líquido: ${roiMarket.toFixed(1)}%`;
+
+            document.getElementById('evDiscard').innerText = `${Math.round(evDiscardTotal).toLocaleString()} Coins`;
+            document.getElementById('roiDiscard').innerText = `Piso Garantido: ${roiDiscard.toFixed(1)}%`;
+
+            document.getElementById('targetPlayerVal').innerText = `${Math.round(targetPlayerMarketVal).toLocaleString()} Coins`;
+        }
+    </script>
+</body>
+</html>

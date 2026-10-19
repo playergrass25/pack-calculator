@@ -228,6 +228,16 @@
             border-color: var(--accent-green);
         }
 
+        .grid-btn.bronze {
+            border-color: #cd7f32;
+            color: #cd7f32;
+        }
+
+        .grid-btn.silver {
+            border-color: #c0c0c0;
+            color: #c0c0c0;
+        }
+
         .grid-btn.totw {
             border-color: var(--accent-gold);
             color: var(--accent-gold);
@@ -467,21 +477,19 @@
 
             <label>Toque para adicionar cartas ou consumíveis tirados:</label>
             <div class="quick-grid" style="margin-top: 8px;">
+                <button class="grid-btn bronze" onclick="addCardToOpened('bronze')">Bronze</button>
+                <button class="grid-btn silver" onclick="addCardToOpened('prata')">Prata</button>
                 <button class="grid-btn" onclick="addCardToOpened('75')">Ouro 75-79</button>
                 <button class="grid-btn" onclick="addCardToOpened('80')">Ouro 80-82</button>
                 <button class="grid-btn" onclick="addCardToOpened('83')">Ouro 83</button>
                 <button class="grid-btn" onclick="addCardToOpened('84')">Ouro 84</button>
                 <button class="grid-btn" onclick="addCardToOpened('85')">Ouro 85</button>
-                <button class="grid-btn" onclick="addCardToOpened('86')">Ouro 86</button>
-                <button class="grid-btn" onclick="addCardToOpened('87')">Ouro 87</button>
-                <button class="grid-btn" onclick="addCardToOpened('88')">Ouro 88</button>
-                <button class="grid-btn" onclick="addCardToOpened('89')">Ouro 89</button>
-                <button class="grid-btn" onclick="addCardToOpened('90')">Ouro 90+</button>
+                <button class="grid-btn" onclick="addCardToOpened('86')">Ouro 86+</button>
                 <button class="grid-btn totw" onclick="addCardToOpened('totw_83')">TOTW 83-84</button>
                 <button class="grid-btn totw" onclick="addCardToOpened('totw_85')">TOTW 85-87</button>
                 <button class="grid-btn totw" onclick="addCardToOpened('totw_88')">TOTW 88+</button>
                 <button class="grid-btn consumable" onclick="addCardToOpened('consumable')">Consumível</button>
-                <button class="grid-btn" style="border-color: var(--accent-blue); grid-column: span 2;" onclick="addCardPersonalizada()">➕ Outro Rating...</button>
+                <button class="grid-btn" style="border-color: var(--accent-blue); grid-column: span 2;" onclick="addCardPersonalizada()">➕ Outro...</button>
             </div>
 
             <label>Itens Registrados (<span id="openedCardsCount">0</span>):</label>
@@ -545,7 +553,10 @@
     </div>
 
     <script>
+        // TABELA COMPLETA DE DESCARTE (BRONZE, PRATA, OURO E TOTW)
         const DISCARD_PRICES_FC27 = {
+            'bronze_comum': 48, 'bronze_raro': 96,
+            'prata_comum': 100, 'prata_raro': 200,
             75: 533, 76: 540, 77: 547, 78: 554, 79: 561,
             80: 568, 81: 575, 82: 582, 83: 589, 84: 596,
             85: 604, 86: 611, 87: 618, 88: 622, 89: 630,
@@ -553,6 +564,4 @@
             95: 11590, 96: 11712, 97: 11834, 98: 11956, 99: 12078,
             'totw_75': 9150, 'totw_76': 9272, 'totw_77': 9394, 'totw_78': 9516, 'totw_79': 9638,
             'totw_80': 9760, 'totw_81': 9882, 'totw_82': 10004, 'totw_83': 10126, 'totw_84': 10248,
-            'totw_85': 10370, 'totw_86': 10492, 'totw_87': 10614, 'totw_88': 10736, 'totw_89': 10858,
-            'totw_90': 10980, 'totw_91': 11102, 'totw_92': 11224, 'totw_93': 11346, 'totw_94': 11468,
- 
+  

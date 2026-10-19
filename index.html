@@ -151,7 +151,7 @@
 
         .tier-item, .card-item {
             background: rgba(0,0,0,0.2);
-            padding: 8px;
+            padding: 8px 10px;
             border-radius: 6px;
             margin-bottom: 8px;
             border: 1px solid #1f2633;
@@ -159,8 +159,34 @@
 
         .tier-row, .card-row {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
+        }
+
+        .card-label {
+            font-weight: bold;
+            color: var(--accent-gold);
+            font-size: 0.85rem;
+            min-width: 28px;
+        }
+
+        .btn-toggle-market {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .btn-toggle-market.active {
+            background: rgba(0, 255, 135, 0.15);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
         }
 
         .btn-danger {
@@ -423,24 +449,17 @@
                 <label>Custo Pago (Moedas)</label>
                 <input type="number" id="regPackCost" placeholder="Ex: 60000" oninput="atualizarResumoAbertura()">
             </div>
-
-            <div class="form-group">
-                <label class="checkbox-group">
-                    <input type="checkbox" id="regTaxCheckbox" checked onchange="atualizarResumoAbertura()">
-                    <span>Aplicar Imposto EA de 5% sobre os valores das cartas</span>
-                </label>
-            </div>
         </div>
 
-        <!-- CARTA POR CARTA -->
+        <!-- CARTA POR CARTA (C1, C2, C3...) -->
         <div class="card">
             <div class="card-title">
-                <span>Cartas & Itens Tirados</span>
-                <span id="regTotalBruto" style="font-size:0.8rem; color:var(--text-muted)">Total: 0 Coins</span>
+                <span>Cartas Tiradas</span>
+                <span id="regTotalBruto" style="font-size:0.8rem; color:var(--text-muted)">Bruto: 0 Coins</span>
             </div>
             
             <div id="cardsContainer"></div>
-            <button class="btn-add" onclick="addCardInput()">+ Adicionar Carta Tirada</button>
+            <button class="btn-add" onclick="addCardInput()">+ Adicionar Carta (C${currentRegCards.length + 1})</button>
         </div>
 
         <div class="card" style="background: #18221c; border-color: var(--accent-green);">
@@ -515,7 +534,7 @@
         window.onload = function() {
             renderPresetsSelect();
             carregarPresetSelecionado();
-            addCardInput(); // Inicia com 1 campo de carta na tela de registro
+            addCardInput(); // Inicia com C1
             renderHistory();
         };
 
@@ -545,299 +564,4 @@
                 document.getElementById('consumableQty').value = p.consQty;
                 document.getElementById('consumableVal').value = p.consVal;
                 defaultTiers = JSON.parse(JSON.stringify(p.tiers));
-                renderTiers();
-                calcularEV();
-            }
-        }
-
-        function salvarPreset() {
-            const name = document.getElementById('packName').value;
-            const cost = parseFloat(document.getElementById('packCost').value) || 0;
-            const consQty = parseFloat(document.getElementById('consumableQty').value) || 0;
-            const consVal = parseFloat(document.getElementById('consumableVal').value) || 0;
-
-            const newPreset = {
-                id: Date.now().toString(),
-                name: name,
-                cost: cost,
-                tiers: defaultTiers,
-                consQty: consQty,
-                consVal: consVal
-            };
-
-            presets.push(newPreset);
-            localStorage.setItem('eafc_presets', JSON.stringify(presets));
-            renderPresetsSelect();
-            document.getElementById('presetSelect').value = presets.length - 1;
-            alert('Preset salvo com sucesso!');
-        }
-
-        function deletarPresetAtual() {
-            if (presets.length <= 1) {
-                alert('Você precisa ter pelo menos um preset mantido.');
-                return;
-            }
-            const idx = document.getElementById('presetSelect').value;
-            if (confirm(`Deseja excluir o preset "${presets[idx].name}"?`)) {
-                presets.splice(idx, 1);
-                localStorage.setItem('eafc_presets', JSON.stringify(presets));
-                renderPresetsSelect();
-                carregarPresetSelecionado();
-            }
-        }
-
-        // TIER ENGINE (SIMULADOR)
-        function renderTiers() {
-            const container = document.getElementById('tiersContainer');
-            container.innerHTML = '';
-            
-            defaultTiers.forEach((tier, index) => {
-                container.innerHTML += `
-                    <div class="tier-item">
-                        <div class="tier-row">
-                            <input type="text" value="${tier.name}" style="flex:1.2" onchange="updateTier(${index}, 'name', this.value)">
-                            <input type="number" value="${tier.prob}" placeholder="%" style="flex:0.8" onchange="updateTier(${index}, 'prob', this.value)"> %
-                            <input type="number" value="${tier.price}" placeholder="Coins" style="flex:1" onchange="updateTier(${index}, 'price', this.value)">
-                            <button class="btn-danger" onclick="removeTier(${index})">✕</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function updateTier(index, field, value) {
-            defaultTiers[index][field] = field === 'name' ? value : parseFloat(value) || 0;
-            calcularEV();
-        }
-
-        function addTier() {
-            defaultTiers.push({ name: "Novo Rating", prob: 5, price: 5000 });
-            renderTiers();
-            calcularEV();
-        }
-
-        function removeTier(index) {
-            defaultTiers.splice(index, 1);
-            renderTiers();
-            calcularEV();
-        }
-
-        // CÁLCULO DE EV E IMPOSTO
-        function calcularEV() {
-            const cost = parseFloat(document.getElementById('packCost').value) || 0;
-            const consQty = parseFloat(document.getElementById('consumableQty').value) || 0;
-            const consVal = parseFloat(document.getElementById('consumableVal').value) || 0;
-            const applyTax = document.getElementById('taxCheckbox').checked;
-
-            let evCardsBruto = 0;
-            defaultTiers.forEach(tier => {
-                evCardsBruto += (tier.prob / 100) * tier.price;
-            });
-
-            const consTotalBruto = consQty * consVal;
-            const evBrutoTotal = evCardsBruto + consTotalBruto;
-
-            // Aplica imposto de 5% se selecionado
-            const multiplier = applyTax ? 0.95 : 1.0;
-            const evLiquidoTotal = evBrutoTotal * multiplier;
-            const lossEsperada = cost - evLiquidoTotal;
-            const roi = cost > 0 ? (evLiquidoTotal / cost) * 100 : 0;
-
-            // Atualiza Interface
-            document.getElementById('evTotal').innerText = `${Math.round(evLiquidoTotal).toLocaleString()} Coins`;
-            document.getElementById('roiTotal').innerText = `Retorno Médio Líquido: ${roi.toFixed(1)}%`;
-            document.getElementById('lossEsperada').innerText = `${Math.round(lossEsperada).toLocaleString()} Coins`;
-            document.getElementById('consumablesTotal').innerText = `${Math.round(consTotalBruto * multiplier).toLocaleString()} Coins`;
-
-            // Meta Break-Even
-            // (TargetVal * multiplier) + consTotalLiquido = cost
-            const consTotalLiquido = consTotalBruto * multiplier;
-            const neededFromPlayer = Math.max(0, cost - consTotalLiquido);
-            const targetPlayerValBruto = neededFromPlayer / multiplier;
-
-            document.getElementById('targetPlayerVal').innerText = `${Math.round(targetPlayerValBruto).toLocaleString()} Coins`;
-
-            // Badge Status
-            const badge = document.getElementById('badgeResultado');
-            if (roi >= 100) {
-                badge.className = "badge badge-success";
-                badge.innerText = "LUCRO ESPERADO / EXCELENTE EV";
-            } else if (roi >= 75) {
-                badge.className = "badge badge-success";
-                badge.style.background = "rgba(255, 184, 0, 0.2)";
-                badge.style.color = "var(--accent-gold)";
-                badge.innerText = "RISCO MODERADO / RETORNO RAZOÁVEL";
-            } else {
-                badge.className = "badge badge-danger";
-                badge.innerText = "RISCO ALTO / PREJUÍZO ESPERADO";
-            }
-        }
-
-        // REGISTRO CARTA POR CARTA
-        function addCardInput() {
-            currentRegCards.push({ id: Date.now() + Math.random(), name: '', price: 0 });
-            renderCardInputs();
-        }
-
-        function removeCardInput(id) {
-            currentRegCards = currentRegCards.filter(c => c.id !== id);
-            renderCardInputs();
-            atualizarResumoAbertura();
-        }
-
-        function updateCardData(id, field, val) {
-            const card = currentRegCards.find(c => c.id === id);
-            if (card) {
-                card[field] = field === 'price' ? parseFloat(val) || 0 : val;
-            }
-            atualizarResumoAbertura();
-        }
-
-        function renderCardInputs() {
-            const container = document.getElementById('cardsContainer');
-            container.innerHTML = '';
-
-            currentRegCards.forEach((c, index) => {
-                container.innerHTML += `
-                    <div class="card-item">
-                        <div class="card-row">
-                            <input type="text" placeholder="Nome do Jogador / Item" value="${c.name}" style="flex:1.5" oninput="updateCardData(${c.id}, 'name', this.value)">
-                            <input type="number" placeholder="Valor Coins" value="${c.price || ''}" style="flex:1" oninput="updateCardData(${c.id}, 'price', this.value)">
-                            <button class="btn-danger" onclick="removeCardInput(${c.id})">✕</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function atualizarResumoAbertura() {
-            const cost = parseFloat(document.getElementById('regPackCost').value) || 0;
-            const applyTax = document.getElementById('regTaxCheckbox').checked;
-
-            let totalBruto = currentRegCards.reduce((acc, c) => acc + (c.price || 0), 0);
-            const multiplier = applyTax ? 0.95 : 1.0;
-            const totalLiquido = totalBruto * multiplier;
-            const profitLoss = totalLiquido - cost;
-
-            document.getElementById('regTotalBruto').innerText = `Bruto: ${totalBruto.toLocaleString()} Coins`;
-            document.getElementById('regNetReturn').innerText = `${Math.round(totalLiquido).toLocaleString()} Coins`;
-            
-            const profitEl = document.getElementById('regProfitLoss');
-            profitEl.innerText = `${Math.round(profitLoss).toLocaleString()} Coins`;
-            profitEl.style.color = profitLoss >= 0 ? "var(--accent-green)" : "var(--danger-red)";
-        }
-
-        function salvarAbertura() {
-            const packName = document.getElementById('regPackName').value || 'Pacote Sem Nome';
-            const cost = parseFloat(document.getElementById('regPackCost').value) || 0;
-            const applyTax = document.getElementById('regTaxCheckbox').checked;
-
-            if (cost <= 0) {
-                alert('Insira o valor pago pelo pacote.');
-                return;
-            }
-
-            const totalBruto = currentRegCards.reduce((acc, c) => acc + (c.price || 0), 0);
-            const multiplier = applyTax ? 0.95 : 1.0;
-            const totalLiquido = totalBruto * multiplier;
-            const profit = totalLiquido - cost;
-
-            const entry = {
-                id: Date.now(),
-                date: new Date().toLocaleDateString('pt-BR'),
-                packName: packName,
-                cost: cost,
-                cards: JSON.parse(JSON.stringify(currentRegCards)),
-                totalLiquido: totalLiquido,
-                profit: profit
-            };
-
-            historyData.unshift(entry);
-            localStorage.setItem('eafc_pack_history', JSON.stringify(historyData));
-
-            // Reset Form
-            document.getElementById('regPackName').value = '';
-            document.getElementById('regPackCost').value = '';
-            currentRegCards = [];
-            addCardInput();
-            atualizarResumoAbertura();
-            renderHistory();
-
-            alert('Abertura de pacote salva com sucesso!');
-            switchTab('historico');
-        }
-
-        // HISTÓRICO E FILTROS
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            const filterSelect = document.getElementById('historyFilterSelect');
-            const selectedFilter = filterSelect.value;
-
-            // Atualiza as opções do filtro com os pacotes do histórico
-            const uniquePacks = [...new Set(historyData.map(item => item.packName))];
-            filterSelect.innerHTML = '<option value="ALL">Todos os Pacotes</option>';
-            uniquePacks.forEach(p => {
-                filterSelect.innerHTML += `<option value="${p}" ${selectedFilter === p ? 'selected' : ''}>${p}</option>`;
-            });
-
-            // Aplica o filtro
-            const filteredData = selectedFilter === 'ALL' 
-                ? historyData 
-                : historyData.filter(item => item.packName === selectedFilter);
-
-            list.innerHTML = '';
-
-            let totalSpent = 0;
-            let totalReturned = 0;
-
-            filteredData.forEach(item => {
-                totalSpent += item.cost;
-                totalReturned += item.totalLiquido;
-
-                const cardsSummary = item.cards && item.cards.length > 0 
-                    ? item.cards.map(c => `${c.name || 'Item'} (${c.price.toLocaleString()}c)`).join(', ')
-                    : 'Nenhum item individual gravado';
-
-                list.innerHTML += `
-                    <div class="history-item">
-                        <div class="history-header">
-                            <div>
-                                <h4>${item.packName}</h4>
-                                <p style="font-size:0.7rem; color:var(--text-muted)">${item.date} • Custo: ${item.cost.toLocaleString()} Coins</p>
-                            </div>
-                            <div class="history-val">
-                                <div class="${item.profit >= 0 ? 'profit' : 'loss'}">
-                                    ${item.profit >= 0 ? '+' : ''}${Math.round(item.profit).toLocaleString()} Coins
-                                </div>
-                            </div>
-                        </div>
-                        <div class="history-cards-list">
-                            <strong>Itens:</strong> ${cardsSummary}
-                        </div>
-                    </div>
-                `;
-            });
-
-            if (filteredData.length === 0) {
-                list.innerHTML = '<div class="empty-msg">Nenhum registro encontrado para este filtro.</div>';
-            }
-
-            const netProfit = totalReturned - totalSpent;
-            document.getElementById('totalSpent').innerText = `${Math.round(totalSpent).toLocaleString()} Coins`;
-            document.getElementById('totalReturned').innerText = `${Math.round(totalReturned).toLocaleString()} Coins`;
-            
-            const netProfitEl = document.getElementById('netProfit');
-            netProfitEl.innerText = `${Math.round(netProfit).toLocaleString()} Coins`;
-            netProfitEl.style.color = netProfit >= 0 ? "var(--accent-green)" : "var(--danger-red)";
-        }
-
-        function limparHistorico() {
-            if (confirm('Tem certeza que deseja apagar todo o histórico de aberturas?')) {
-                historyData = [];
-                localStorage.removeItem('eafc_pack_history');
-                renderHistory();
-            }
-        }
-    </script>
-</body>
-</html>
+                renderTiers

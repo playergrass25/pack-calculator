@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EA FC 27 - Calculadora de EV de Pacotes</title>
+    <title>EA FC 27 - Calculadora de EV com Pré-sets</title>
     <style>
         :root {
             --bg-color: #0b0e14;
@@ -158,6 +158,17 @@
             font-weight: bold;
         }
 
+        .btn-action {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--accent-green);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
         /* PAINEL DE RESULTADOS */
         .results-grid {
             display: grid;
@@ -192,9 +203,9 @@
         }
 
         .result-val {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 800;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .result-val.market-color { color: var(--accent-green); }
@@ -202,6 +213,13 @@
 
         .result-sub {
             font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .profit-loss-row {
+            margin-top: 8px;
+            font-size: 0.8rem;
             font-weight: bold;
         }
 
@@ -239,6 +257,20 @@
         <p>Visão de Mercado vs. Piso de Descarte (FC 27 Data)</p>
     </header>
 
+    <!-- GERENCIADOR DE PRÉ-SETS -->
+    <div class="card" style="border-color: var(--accent-gold);">
+        <div class="card-title">
+            <span>💾 Pré-sets Salvos</span>
+            <button class="btn-danger" style="font-size:0.75rem; padding:4px 8px;" onclick="deletarPresetAtual()">🗑️ Excluir Pré-set</button>
+        </div>
+        <div class="form-group">
+            <select id="presetSelect" onchange="carregarPresetSelecionado()">
+                <!-- Preenchido via JS -->
+            </select>
+        </div>
+        <button class="btn-action" style="width:100%; text-align:center;" onclick="salvarNovoPreset()">💾 Salvar Configurações Atuais como Novo Pré-set</button>
+    </div>
+
     <!-- 1. DADOS DO PACOTE -->
     <div class="card">
         <div class="card-title">1. Configuração do Pacote</div>
@@ -267,7 +299,7 @@
     <div class="card">
         <div class="card-title">2. Faixas de Probabilidade da Loja</div>
         <div id="tiersContainer"></div>
-        <button class="btn-add" onclick="addTier()">+ Adicionar Faixa de Rating</button>
+        <button class="btn-add" onclick="addTier()">+ Adicionar Faixa de Rating / Especial</button>
     </div>
 
     <!-- 3. CONSUMÍVEIS / OUTROS ITENS -->
@@ -295,6 +327,7 @@
                 <div class="result-title">🟢 Visão Mercado</div>
                 <div class="result-val market-color" id="evMarket">0 Coins</div>
                 <div class="result-sub" id="roiMarket">ROI: 0%</div>
+                <div class="profit-loss-row" id="plMarket">Lucro/Prejuízo: 0</div>
             </div>
 
             <!-- VISÃO DESCARTE -->
@@ -302,6 +335,7 @@
                 <div class="result-title">🛡️ Piso de Descarte</div>
                 <div class="result-val discard-color" id="evDiscard">0 Coins</div>
                 <div class="result-sub" id="roiDiscard">Piso: 0%</div>
+                <div class="profit-loss-row" id="plDiscard">Lucro/Prejuízo: 0</div>
             </div>
         </div>
 
@@ -320,46 +354,131 @@
             80: 568, 81: 575, 82: 582, 83: 589, 84: 596,
             85: 604, 86: 611, 87: 618, 88: 622, 89: 630,
             90: 638, 91: 646, 92: 11224, 93: 11346, 94: 11468,
-            95: 11590, 96: 11712, 97: 11834, 98: 11956, 99: 12078
+            95: 11590, 96: 11712, 97: 11834, 98: 11956, 99: 12078,
+            'totw_75': 9150, 'totw_76': 9272, 'totw_77': 9394, 'totw_78': 9516, 'totw_79': 9638,
+            'totw_80': 9760, 'totw_81': 9882, 'totw_82': 10004, 'totw_83': 10126, 'totw_84': 10248,
+            'totw_85': 10370, 'totw_86': 10492, 'totw_87': 10614, 'totw_88': 10736, 'totw_89': 10858,
+            'totw_90': 10980, 'totw_91': 11102, 'totw_92': 11224, 'totw_93': 11346, 'totw_94': 11468,
+            'totw_95': 11590, 'totw_96': 11712, 'totw_97': 11834, 'totw_98': 11956, 'totw_99': 12078
         };
 
-        // FAIXAS PADRÃO INICIAIS DE EXEMPLO
-        let tiers = [
-            { rating: 75, prob: 100, marketPrice: 400 },
-            { rating: 82, prob: 30, marketPrice: 850 },
-            { rating: 84, prob: 12, marketPrice: 2800 },
-            { rating: 86, prob: 2.5, marketPrice: 11500 }
+        // ESTRUTURA DE PRÉ-SETS PADRÃO E LOCALSTORAGE
+        let defaultPresets = [
+            {
+                id: "p1",
+                name: "Pacote Ouro Grande de Atletas (60k)",
+                cost: 60000,
+                consQty: 12,
+                consVal: 150,
+                tiers: [
+                    { key: "75", prob: 100, marketPrice: 400 },
+                    { key: "82", prob: 30, marketPrice: 850 },
+                    { key: "84", prob: 12, marketPrice: 2800 },
+                    { key: "totw_84", prob: 2.5, marketPrice: 18000 }
+                ]
+            }
         ];
 
+        let presets = JSON.parse(localStorage.getItem('eafc27_ev_presets')) || defaultPresets;
+        let tiers = [];
+
         window.onload = function() {
-            renderTiers();
-            calcularTudo();
+            renderPresetsSelect();
+            carregarPresetSelecionado();
         };
 
+        // GERENCIAMENTO DE PRÉ-SETS
+        function renderPresetsSelect() {
+            const select = document.getElementById('presetSelect');
+            select.innerHTML = '';
+            presets.forEach((p, idx) => {
+                select.innerHTML += `<option value="${idx}">${p.name}</option>`;
+            });
+        }
+
+        function carregarPresetSelecionado() {
+            const idx = document.getElementById('presetSelect').value;
+            if (presets[idx]) {
+                const p = presets[idx];
+                document.getElementById('packName').value = p.name;
+                document.getElementById('packCost').value = p.cost;
+                document.getElementById('consumableQty').value = p.consQty;
+                document.getElementById('consumableVal').value = p.consVal;
+                tiers = JSON.parse(JSON.stringify(p.tiers));
+                renderTiers();
+                calcularTudo();
+            }
+        }
+
+        function salvarNovoPreset() {
+            const packName = document.getElementById('packName').value || "Novo Pré-set";
+            const cost = parseFloat(document.getElementById('packCost').value) || 0;
+            const consQty = parseFloat(document.getElementById('consumableQty').value) || 0;
+            const consVal = parseFloat(document.getElementById('consumableVal').value) || 0;
+
+            const newPreset = {
+                id: Date.now().toString(),
+                name: packName,
+                cost: cost,
+                consQty: consQty,
+                consVal: consVal,
+                tiers: JSON.parse(JSON.stringify(tiers))
+            };
+
+            presets.push(newPreset);
+            localStorage.setItem('eafc27_ev_presets', JSON.stringify(presets));
+            renderPresetsSelect();
+            document.getElementById('presetSelect').value = presets.length - 1;
+            alert(`Pré-set "${packName}" salvo com sucesso e gravado no dispositivo!`);
+        }
+
+        function deletarPresetAtual() {
+            if (presets.length <= 1) {
+                alert('Você precisa manter pelo menos 1 pré-set na lista.');
+                return;
+            }
+            const idx = document.getElementById('presetSelect').value;
+            if (confirm(`Tem certeza que deseja apagar o pré-set "${presets[idx].name}"?`)) {
+                presets.splice(idx, 1);
+                localStorage.setItem('eafc27_ev_presets', JSON.stringify(presets));
+                renderPresetsSelect();
+                carregarPresetSelecionado();
+            }
+        }
+
+        // MONTAGEM DE TIER ENGINE
         function renderTiers() {
             const container = document.getElementById('tiersContainer');
             container.innerHTML = '';
 
             tiers.forEach((tier, index) => {
-                const discardVal = DISCARD_PRICES_FC27[tier.rating] || 533;
+                const discardVal = DISCARD_PRICES_FC27[tier.key] || 533;
+                
+                let customSelect = `<select onchange="updateTier(${index}, 'key', this.value)">`;
+                for (let i = 75; i <= 99; i++) {
+                    customSelect += `<option value="${i}" ${tier.key == i ? 'selected' : ''}>Ouro ${i}</option>`;
+                    customSelect += `<option value="totw_${i}" ${tier.key == 'totw_' + i ? 'selected' : ''}>⭐ TOTW/Especial ${i}</option>`;
+                }
+                customSelect += `</select>`;
+
                 container.innerHTML += `
                     <div class="tier-item">
                         <div class="tier-row">
-                            <div style="flex:1">
-                                <label>Rating Base</label>
-                                <input type="number" value="${tier.rating}" min="75" max="99" onchange="updateTier(${index}, 'rating', this.value)">
+                            <div style="flex:1.4">
+                                <label>Categoria / Rating</label>
+                                ${customSelect}
                             </div>
-                            <div style="flex:1">
+                            <div style="flex:0.8">
                                 <label>Prob. (%)</label>
                                 <input type="number" value="${tier.prob}" step="0.1" onchange="updateTier(${index}, 'prob', this.value)">
                             </div>
-                            <div style="flex:1.2">
+                            <div style="flex:1">
                                 <label>Preço Mercado</label>
                                 <input type="number" value="${tier.marketPrice}" step="50" onchange="updateTier(${index}, 'marketPrice', this.value)">
                             </div>
-                            <div style="flex:0.8; text-align:center;">
+                            <div style="flex:0.7; text-align:center;">
                                 <label>Descarte</label>
-                                <span style="font-size:0.8rem; color:var(--accent-gold); font-weight:bold;">${discardVal}c</span>
+                                <span style="font-size:0.75rem; color:var(--accent-gold); font-weight:bold;">${discardVal}c</span>
                             </div>
                             <button class="btn-danger" style="margin-top:14px;" onclick="removeTier(${index})">✕</button>
                         </div>
@@ -369,13 +488,13 @@
         }
 
         function updateTier(index, field, value) {
-            tiers[index][field] = parseFloat(value) || 0;
+            tiers[index][field] = field === 'key' ? value : (parseFloat(value) || 0);
             renderTiers();
             calcularTudo();
         }
 
         function addTier() {
-            tiers.push({ rating: 83, prob: 10, marketPrice: 1500 });
+            tiers.push({ key: "83", prob: 10, marketPrice: 1500 });
             renderTiers();
             calcularTudo();
         }
@@ -400,35 +519,36 @@
 
             tiers.forEach(tier => {
                 const prob = tier.prob / 100;
-                const discardPrice = DISCARD_PRICES_FC27[tier.rating] || 533;
+                const discardPrice = DISCARD_PRICES_FC27[tier.key] || 533;
 
                 evMarketBruto += prob * tier.marketPrice;
                 evDiscardTotal += prob * discardPrice;
             });
 
-            // Adiciona consumíveis ao valor bruto do mercado também
             evMarketBruto += consTotalDiscard;
-
             const evMarketLiquido = evMarketBruto * taxMultiplier;
 
-            // ROIs
             const roiMarket = cost > 0 ? (evMarketLiquido / cost) * 100 : 0;
             const roiDiscard = cost > 0 ? (evDiscardTotal / cost) * 100 : 0;
 
-            // Meta Break-Even
-            // (TargetValue * taxMultiplier) + consTotalLiquido = cost
+            const plMarketVal = evMarketLiquido - cost;
+            const plDiscardVal = evDiscardTotal - cost;
+
             const neededFromPlayer = Math.max(0, cost - (consTotalDiscard * taxMultiplier));
             const targetPlayerMarketVal = neededFromPlayer / taxMultiplier;
 
-            // Atualiza Interface
+            // Atualiza Mercado
             document.getElementById('evMarket').innerText = `${Math.round(evMarketLiquido).toLocaleString()} Coins`;
             document.getElementById('roiMarket').innerText = `ROI Líquido: ${roiMarket.toFixed(1)}%`;
+            
+            const plMarketEl = document.getElementById('plMarket');
+            plMarketEl.innerText = `${plMarketVal >= 0 ? 'Lucro: +' : 'Prejuízo: '}${Math.round(plMarketVal).toLocaleString()}c`;
+            plMarketEl.style.color = plMarketVal >= 0 ? "var(--accent-green)" : "var(--danger-red)";
 
+            // Atualiza Descarte
             document.getElementById('evDiscard').innerText = `${Math.round(evDiscardTotal).toLocaleString()} Coins`;
             document.getElementById('roiDiscard').innerText = `Piso Garantido: ${roiDiscard.toFixed(1)}%`;
 
-            document.getElementById('targetPlayerVal').innerText = `${Math.round(targetPlayerMarketVal).toLocaleString()} Coins`;
-        }
-    </script>
-</body>
-</html>
+            const plDiscardEl = document.getElementById('plDiscard');
+            plDiscardEl.innerText = `${plDiscardVal >= 0 ? 'Lucro: +' : 'Prejuízo: '}${Math.round(plDiscardVal).toLocaleString()}c`;
+            plDiscardEl.style.color = plDiscardVal >= 0 ? "var

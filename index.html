@@ -381,24 +381,12 @@
 
     <!-- ABA 1: CALCULADORA DE EV -->
     <div id="tab-simulador" class="tab-content active">
-        <div class="card" style="border-color: var(--accent-gold);">
-            <div class="card-title">
-                <span>💾 Pré-sets Salvos</span>
-                <button class="btn-danger" style="font-size:0.75rem; padding:4px 8px; height:auto;" onclick="deletarPresetAtual()">🗑️ Excluir Pré-set</button>
-            </div>
-            <div class="form-group">
-                <select id="presetSelect" onchange="carregarPresetSelecionado()">
-                </select>
-            </div>
-            <button class="btn-action" style="width:100%; text-align:center;" onclick="salvarNovoPreset()">💾 Salvar Configurações Atuais como Novo Pré-set</button>
-        </div>
-
         <div class="card">
             <div class="card-title">Configuração do Pacote</div>
             
             <div class="form-group">
                 <label>Nome do Pacote</label>
-                <input type="text" id="packName" value="Pacote Ouro Grande de Atletas">
+                <input type="text" id="packName" value="Pacote Ouro Grande de Atletas" oninput="sincronizarNomePack()">
             </div>
 
             <div class="row">
@@ -553,10 +541,10 @@
     </div>
 
     <script>
-        // TABELA COMPLETA DE DESCARTE (BRONZE, PRATA, OURO E TOTW)
+        // TABELA OFICIAL COMPLETA DE DESCARTE (EA FC 27)
         const DISCARD_PRICES_FC27 = {
-            'bronze_comum': 48, 'bronze_raro': 96,
-            'prata_comum': 100, 'prata_raro': 200,
+            'bronze': 48,
+            'prata': 100,
             75: 533, 76: 540, 77: 547, 78: 554, 79: 561,
             80: 568, 81: 575, 82: 582, 83: 589, 84: 596,
             85: 604, 86: 611, 87: 618, 88: 622, 89: 630,
@@ -564,4 +552,432 @@
             95: 11590, 96: 11712, 97: 11834, 98: 11956, 99: 12078,
             'totw_75': 9150, 'totw_76': 9272, 'totw_77': 9394, 'totw_78': 9516, 'totw_79': 9638,
             'totw_80': 9760, 'totw_81': 9882, 'totw_82': 10004, 'totw_83': 10126, 'totw_84': 10248,
-  
+            'totw_85': 10370, 'totw_86': 10492, 'totw_87': 10614, 'totw_88': 10736, 'totw_89': 10858,
+            'totw_90': 10980, 'totw_91': 11102, 'totw_92': 11224, 'totw_93': 11346, 'totw_94': 11468,
+            'totw_95': 11590, 'totw_96': 11712, 'totw_97': 11834, 'totw_98': 11956, 'totw_99': 12078,
+            'consumable': 150
+        };
+
+        function getBaseDiscard(key) {
+            const lowerKey = String(key).toLowerCase();
+            
+            if (lowerKey.includes('bronze')) return 48;
+            if (lowerKey.includes('prata')) return 100;
+            
+            const match = lowerKey.match(/\d+/);
+            if (match) {
+                const rating = parseInt(match[0]);
+                if (lowerKey.includes('totw')) {
+                    return DISCARD_PRICES_FC27[`totw_${rating}`] || 9150;
+                }
+                return DISCARD_PRICES_FC27[rating] || (rating >= 92 ? 11224 : 533);
+            }
+            if (lowerKey.includes('totw')) return 9150;
+            return 533;
+        }
+
+        let tiers = [
+            { key: "Bronze", prob: 100, marketPrice: 100 },
+            { key: "Prata", prob: 100, marketPrice: 200 },
+            { key: "82+", prob: 30, marketPrice: 850 },
+            { key: "TOTW", prob: 2.5, marketPrice: 18000 }
+        ];
+
+        let packHistory = JSON.parse(localStorage.getItem('eafc27_pack_history')) || [];
+        let openedCards = [];
+
+        window.onload = function() {
+            renderTiers();
+            calcularTudo();
+            renderHistorico();
+            sincronizarNomePack();
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            const targetBtn = document.querySelector(`[onclick="switchTab('${tabId}')"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+
+            const targetContent = document.getElementById(tabId);
+            if (targetContent) targetContent.classList.add('active');
+
+            if (tabId === 'tab-abertura') {
+                sincronizarNomePack();
+                calcularAberturaReal();
+                renderHistorico();
+            }
+        }
+
+        function sincronizarNomePack() {
+            const packNameInput = document.getElementById('packName');
+            const openTitle = document.getElementById('openPackTitle');
+            if (packNameInput && openTitle) {
+                openTitle.innerText = packNameInput.value || "Pacote";
+            }
+        }
+
+        function sincronizarTiersDaTela() {
+            tiers.forEach((tier, index) => {
+                const keyInput = document.getElementById(`tier-key-${index}`);
+                const probInput = document.getElementById(`tier-prob-${index}`);
+                const marketInput = document.getElementById(`tier-market-${index}`);
+                if (keyInput) tier.key = keyInput.value;
+                if (probInput) tier.prob = parseFloat(probInput.value) || 0;
+                if (marketInput) tier.marketPrice = parseFloat(marketInput.value) || 0;
+            });
+        }
+
+        function renderTiers() {
+            const container = document.getElementById('tiersContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            tiers.forEach((tier, index) => {
+                const discardVal = getBaseDiscard(tier.key);
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'tier-item';
+                itemDiv.innerHTML = `
+                    <div class="tier-grid">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Categoria / Faixa</label>
+                            <input type="text" id="tier-key-${index}" value="${tier.key !== undefined ? tier.key : ''}" placeholder="Ex: Bronze, 83+" oninput="atualizarDescarteEmTempoReal(${index}, this.value)">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Prob. (%)</label>
+                            <input type="number" id="tier-prob-${index}" value="${tier.prob}" step="0.1" oninput="calcularTudo()">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Preço Mercado</label>
+                            <input type="number" id="tier-market-${index}" value="${tier.marketPrice}" step="50" oninput="calcularTudo()">
+                        </div>
+                        <div style="text-align:center; padding-bottom: 8px;">
+                            <label>Descarte</label>
+                            <span id="discard-span-${index}" style="font-size:0.8rem; color:var(--accent-gold); font-weight:bold;">${discardVal}c</span>
+                        </div>
+                        <button class="btn-danger" onclick="removeTier(${index})">✕</button>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function atualizarDescarteEmTempoReal(index, valor) {
+            if (tiers[index]) tiers[index].key = valor;
+            const discardVal = getBaseDiscard(valor);
+            const span = document.getElementById(`discard-span-${index}`);
+            if (span) span.innerText = `${discardVal}c`;
+            calcularTudo();
+        }
+
+        function addTier() {
+            sincronizarTiersDaTela();
+            tiers.push({ key: "83+", prob: 10, marketPrice: 1500 });
+            renderTiers();
+            calcularTudo();
+        }
+
+        function removeTier(index) {
+            sincronizarTiersDaTela();
+            tiers.splice(index, 1);
+            renderTiers();
+            calcularTudo();
+        }
+
+        function calcularTudo() {
+            sincronizarTiersDaTela();
+            const cost = parseFloat(document.getElementById('packCost').value) || 0;
+            const playersCount = parseFloat(document.getElementById('packPlayersCount').value) || 1;
+            const consQty = parseFloat(document.getElementById('consumableQty').value) || 0;
+            const consVal = parseFloat(document.getElementById('consumableVal').value) || 0;
+            const taxCheckbox = document.getElementById('taxCheckbox');
+            const applyTax = taxCheckbox ? taxCheckbox.checked : true;
+
+            const consTotalDiscard = consQty * consVal;
+            const taxMultiplier = applyTax ? 0.95 : 1.0;
+
+            let evMarketBruto = 0;
+            let evDiscardTotal = consTotalDiscard;
+
+            tiers.forEach((tier) => {
+                const prob = tier.prob / 100;
+                const discardPrice = getBaseDiscard(tier.key);
+
+                evMarketBruto += (prob * tier.marketPrice) * playersCount;
+                evDiscardTotal += (prob * discardPrice) * playersCount;
+            });
+
+            evMarketBruto += consTotalDiscard;
+            const evMarketLiquido = evMarketBruto * taxMultiplier;
+
+            const roiMarket = cost > 0 ? (evMarketLiquido / cost) * 100 : 0;
+            const roiDiscard = cost > 0 ? (evDiscardTotal / cost) * 100 : 0;
+
+            const plMarketVal = evMarketLiquido - cost;
+            const plDiscardVal = evDiscardTotal - cost;
+
+            const neededFromPlayer = Math.max(0, cost - (consTotalDiscard * taxMultiplier));
+            const targetPlayerMarketVal = neededFromPlayer / taxMultiplier;
+
+            document.getElementById('evMarket').innerText = `${Math.round(evMarketLiquido).toLocaleString()} Coins`;
+            document.getElementById('roiMarket').innerText = `ROI Líquido: ${roiMarket.toFixed(1)}%`;
+            
+            const plMarketEl = document.getElementById('plMarket');
+            plMarketEl.innerText = `${plMarketVal >= 0 ? 'Lucro: +' : 'Prejuízo: '}${Math.round(plMarketVal).toLocaleString()}c`;
+            plMarketEl.style.color = plMarketVal >= 0 ? "var(--accent-green)" : "var(--danger-red)";
+
+            document.getElementById('evDiscard').innerText = `${Math.round(evDiscardTotal).toLocaleString()} Coins`;
+            document.getElementById('roiDiscard').innerText = `Piso Garantido: ${roiDiscard.toFixed(1)}%`;
+
+            const plDiscardEl = document.getElementById('plDiscard');
+            plDiscardEl.innerText = `${plDiscardVal >= 0 ? 'Lucro: +' : 'Prejuízo: '}${Math.round(plDiscardVal).toLocaleString()}c`;
+            plDiscardEl.style.color = plDiscardVal >= 0 ? "var(--accent-green)" : "var(--danger-red)";
+
+            document.getElementById('targetPlayerVal').innerText = `${Math.round(targetPlayerMarketVal).toLocaleString()} Coins`;
+        }
+
+        function addCardToOpened(key) {
+            let label = key;
+            let marketVal = 1000;
+            let discardVal = getBaseDiscard(key);
+
+            if (key === 'bronze') {
+                label = "Bronze";
+                marketVal = 100;
+            } else if (key === 'prata') {
+                label = "Prata";
+                marketVal = 200;
+            } else if (key === 'consumable') {
+                label = "Consumível / Estádio";
+                marketVal = 150;
+                discardVal = 150;
+            } else if (key.includes('totw')) {
+                label = `TOTW ${key.replace('totw_','')}`;
+                marketVal = 15000;
+            } else {
+                label = `Ouro ${key}`;
+                const tierMatch = tiers.find(t => String(t.key).includes(key));
+                if (tierMatch) marketVal = tierMatch.marketPrice;
+            }
+
+            openedCards.push({
+                id: Date.now() + Math.random(),
+                key: key,
+                label: label,
+                marketVal: marketVal,
+                discardVal: discardVal,
+                action: 'market'
+            });
+
+            renderOpenedCards();
+            calcularAberturaReal();
+        }
+
+        function addCardPersonalizada() {
+            const key = prompt("Digite o nome ou rating (ex: Bronze, Prata, 85+, TOTW):", "85+");
+            if (key) {
+                const discardVal = getBaseDiscard(key);
+                openedCards.push({
+                    id: Date.now() + Math.random(),
+                    key: key,
+                    label: key,
+                    marketVal: 2000,
+                    discardVal: discardVal,
+                    action: 'market'
+                });
+                renderOpenedCards();
+                calcularAberturaReal();
+            }
+        }
+
+        function updateCardAction(index, action) {
+            openedCards[index].action = action;
+            calcularAberturaReal();
+        }
+
+        function updateCardMarketVal(index, val) {
+            openedCards[index].marketVal = parseFloat(val) || 0;
+            calcularAberturaReal();
+        }
+
+        function removeOpenedCard(index) {
+            openedCards.splice(index, 1);
+            renderOpenedCards();
+            calcularAberturaReal();
+        }
+
+        function limparAbertura() {
+            openedCards = [];
+            renderOpenedCards();
+            calcularAberturaReal();
+        }
+
+        function renderOpenedCards() {
+            const container = document.getElementById('openedCardsList');
+            const countEl = document.getElementById('openedCardsCount');
+            if (!container || !countEl) return;
+
+            countEl.innerText = openedCards.length;
+
+            if (openedCards.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding:12px;">Nenhum item registrado. Clique nos botões acima!</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            openedCards.forEach((card, idx) => {
+                container.innerHTML += `
+                    <div class="card-list-item">
+                        <div style="font-weight:bold; flex:1.2;">${card.label}</div>
+                        <div style="flex:1;">
+                            <input type="number" value="${card.marketVal}" style="padding:4px 6px; font-size:0.8rem;" onchange="updateCardMarketVal(${idx}, this.value)">
+                        </div>
+                        <div style="flex:1.2; text-align:center;">
+                            <select class="card-dest-select" onchange="updateCardAction(${idx}, this.value)">
+                                <option value="market" ${card.action === 'market' ? 'selected' : ''}>💰 Vender (5% EA)</option>
+                                <option value="discard" ${card.action === 'discard' ? 'selected' : ''}>🗑️ Descarte (${card.discardVal}c)</option>
+                                <option value="club" ${card.action === 'club' ? 'selected' : ''}>📁 Guardar (SBC)</option>
+                            </select>
+                        </div>
+                        <button class="btn-danger" style="padding:4px 8px; font-size:0.7rem; height:auto; margin-left:6px;" onclick="removeOpenedCard(${idx})">✕</button>
+                    </div>
+                `;
+            });
+        }
+
+        function getAberturaStats() {
+            const cost = parseFloat(document.getElementById('packCost').value) || 0;
+            const taxCheckbox = document.getElementById('taxCheckbox');
+            const applyTax = taxCheckbox ? taxCheckbox.checked : true;
+            const taxMultiplier = applyTax ? 0.95 : 1.0;
+
+            let totalReturnReal = 0;
+
+            openedCards.forEach(c => {
+                if (c.action === 'market') {
+                    totalReturnReal += c.marketVal * taxMultiplier;
+                } else if (c.action === 'discard') {
+                    totalReturnReal += c.discardVal;
+                }
+            });
+
+            const balance = totalReturnReal - cost;
+            return { cost, totalReturnReal, balance };
+        }
+
+        function calcularAberturaReal() {
+            const stats = getAberturaStats();
+            const evMarketEl = document.getElementById('evMarket');
+            let evMarketText = evMarketEl ? evMarketEl.innerText : '0 Coins';
+
+            document.getElementById('expectedEvDisplay').innerText = evMarketText;
+            document.getElementById('realReturnDisplay').innerText = `${Math.round(stats.totalReturnReal).toLocaleString()} Coins`;
+
+            const balEl = document.getElementById('realBalanceDisplay');
+            balEl.innerText = `Balanço Final: ${stats.balance >= 0 ? '+' : ''}${Math.round(stats.balance).toLocaleString()} Coins`;
+            balEl.style.color = stats.balance >= 0 ? "var(--accent-green)" : "var(--danger-red)";
+
+            const diffTextEl = document.getElementById('performanceDiffText');
+            if (stats.balance >= 0) {
+                diffTextEl.innerText = "🎉 Pacote Lucrativo! Você superou o custo do pacote.";
+                diffTextEl.style.color = "var(--accent-green)";
+            } else {
+                diffTextEl.innerText = "📉 Pacote em Prejuízo em relação às moedas gastas.";
+                diffTextEl.style.color = "var(--danger-red)";
+            }
+        }
+
+        function salvarAberturaNoHistorico() {
+            if (openedCards.length === 0) {
+                alert("Adicione pelo menos 1 item tirado no pacote antes de salvar.");
+                return;
+            }
+
+            const packName = document.getElementById('packName').value || "Pacote Desconhecido";
+            const stats = getAberturaStats();
+
+            const historyEntry = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                name: packName,
+                cost: stats.cost,
+                returnVal: stats.totalReturnReal,
+                balance: stats.balance,
+                cardsCount: openedCards.length
+            };
+
+            packHistory.unshift(historyEntry);
+            localStorage.setItem('eafc27_pack_history', JSON.stringify(packHistory));
+
+            renderHistorico();
+            limparAbertura();
+            alert(`Abertura do "${packName}" salva com sucesso no histórico!`);
+        }
+
+        function renderHistorico() {
+            const container = document.getElementById('historyListContainer');
+            if (!container) return;
+            
+            let totalSpent = 0;
+            let totalReturn = 0;
+
+            packHistory.forEach(item => {
+                totalSpent += item.cost;
+                totalReturn += item.returnVal;
+            });
+
+            const totalProfit = totalReturn - totalSpent;
+
+            document.getElementById('histTotalPacks').innerText = packHistory.length;
+            document.getElementById('histTotalSpent').innerText = `${Math.round(totalSpent).toLocaleString()} Coins`;
+            document.getElementById('histTotalReturn').innerText = `${Math.round(totalReturn).toLocaleString()} Coins`;
+
+            const profEl = document.getElementById('histTotalProfit');
+            profEl.innerText = `${totalProfit >= 0 ? '+' : ''}${Math.round(totalProfit).toLocaleString()} Coins`;
+            profEl.style.color = totalProfit >= 0 ? "var(--accent-green)" : "var(--danger-red)";
+
+            if (packHistory.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding:12px;">Nenhum pacote salvo no histórico ainda.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            packHistory.forEach((item, idx) => {
+                container.innerHTML += `
+                    <div class="history-item">
+                        <div>
+                            <strong style="color:#fff; display:block;">${item.name}</strong>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${item.date} • ${item.cardsCount} itens</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-weight:bold; color:${item.balance >= 0 ? 'var(--accent-green)' : 'var(--danger-red)'}; display:block;">
+                                ${item.balance >= 0 ? '+' : ''}${Math.round(item.balance).toLocaleString()}c
+                            </span>
+                            <span style="font-size:0.7rem; color:var(--text-muted);">
+                                R: ${Math.round(item.returnVal).toLocaleString()} / C: ${Math.round(item.cost).toLocaleString()}
+                            </span>
+                        </div>
+                        <button class="btn-danger" style="padding:4px 8px; font-size:0.7rem; height:auto; margin-left:8px;" onclick="deletarItemHistorico(${idx})">✕</button>
+                    </div>
+                `;
+            });
+        }
+
+        function deletarItemHistorico(index) {
+            packHistory.splice(index, 1);
+            localStorage.setItem('eafc27_pack_history', JSON.stringify(packHistory));
+            renderHistorico();
+        }
+
+        function limparTodoHistorico() {
+            if (confirm("Tem certeza que deseja apagar TODO o histórico de aberturas acumulado?")) {
+                packHistory = [];
+                localStorage.setItem('eafc27_pack_history', JSON.stringify(packHistory));
+                renderHistorico();
+            }
+        }
+    </script>
+</body>
+</html>

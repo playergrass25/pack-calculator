@@ -8,10 +8,10 @@
   "theme_color": "#00ff87",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%231a2332'/><rect x='136' y='82' width='240' height='348' rx='16' fill='%23f7c844'/><circle cx='256' cy='256' r='78' fill='%23101622' stroke='%23ffe875' stroke-width='3'/><path d='M202 292 L238 256 L258 276 L302 226' fill='none' stroke='%2300ff87' stroke-width='11' stroke-linecap='round' stroke-linejoin='round'/><path d='M280 224 L310 220 L306 250 Z' fill='%2300ff87'/></svg>",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "https://cdn-icons-png.flaticon.com/512/3356/3356372.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
